@@ -36,9 +36,12 @@ dataset/
 mfa/
 kss/
 baker/
+baker_data/
+baker_ali_aicheng/
 libritts/
 dump_baker/
 dump_ljspeech/
 dump_kss/
 dump_libritts/
 /notebooks/test_saved/
+venv/

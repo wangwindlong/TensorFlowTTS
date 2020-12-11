@@ -27,11 +27,13 @@ from pypinyin.contrib.neutral_tone import NeutralToneWith5Mixin
 from pypinyin.converter import DefaultConverter
 from pypinyin.core import Pinyin
 from tensorflow_tts.processor import BaseProcessor
+from g2p_en import g2p as grapheme_to_phonem
+import unicodedata
 
 _pad = ["pad"]
 _eos = ["eos"]
 _pause = ["sil", "#0", "#1", "#2", "#3"]
-
+# 声母
 _initials = [
     "^",
     "b",
@@ -58,7 +60,7 @@ _initials = [
 ]
 
 _tones = ["1", "2", "3", "4", "5"]
-
+# 韵母
 _finals = [
     "a",
     "ai",
@@ -100,8 +102,12 @@ _finals = [
     "vn",
 ]
 
-BAKER_SYMBOLS = _pad + _pause + _initials + [i + j for i in _finals for j in _tones] + _eos
+g2p = grapheme_to_phonem.G2p()
+valid_symbols = g2p.phonemes
+_punctuation = "!'(),.:;? "
+_arpabet = ["@" + s for s in valid_symbols] + list(_punctuation)
 
+BAKER_SYMBOLS = _pad + _pause + _initials + _finals + ["@" + i for i in _tones] + _arpabet + _eos
 
 PINYIN_DICT = {
     "a": ("^", "a"),
@@ -523,8 +529,8 @@ PINYIN_DICT = {
     "zuo": ("z", "uo"),
 }
 
-
 zh_pattern = re.compile("[\u4e00-\u9fa5]")
+mark = {"en": 1, "zh": 2}
 
 
 def is_zh(word):
@@ -533,13 +539,42 @@ def is_zh(word):
     return match is not None
 
 
+def split_zh_en(zh_en_str):
+    zh_en_group = []
+    zh_gather = ""
+    en_gather = ""
+    zh_status = False
+
+    for c in zh_en_str:
+        if not zh_status and is_zh(c):
+            zh_status = True
+            if en_gather != "":
+                zh_en_group.append([mark["en"], en_gather])
+                en_gather = ""
+        elif not is_zh(c) and zh_status:
+            zh_status = False
+            if zh_gather != "":
+                zh_en_group.append([mark["zh"], zh_gather])
+        if zh_status:
+            zh_gather += c
+        else:
+            en_gather += c
+            zh_gather = ""
+
+    if en_gather != "":
+        zh_en_group.append([mark["en"], en_gather])
+    elif zh_gather != "":
+        zh_en_group.append([mark["zh"], zh_gather])
+
+    return zh_en_group
+
+
 class MyConverter(NeutralToneWith5Mixin, DefaultConverter):
     pass
 
 
 @dataclass
 class BakerProcessor(BaseProcessor):
-
     pinyin_dict: Dict[str, Tuple[str, str]] = field(default_factory=lambda: PINYIN_DICT)
     cleaner_names: str = None
     target_rate: int = 24000
@@ -556,16 +591,16 @@ class BakerProcessor(BaseProcessor):
         items = []
         if self.data_dir:
             with open(
-                os.path.join(self.data_dir, "ProsodyLabeling/000001-010000.txt"),
-                encoding="utf-8",
+                    os.path.join(self.data_dir, "ProsodyLabeling/000001-010000.txt"),
+                    encoding="utf-8",
             ) as ttf:
                 lines = ttf.readlines()
                 for idx in range(0, len(lines), 2):
                     utt_id, chn_char = lines[idx].strip().split()
                     pinyin = lines[idx + 1].strip().split()
-                    if "IY1" in pinyin or "Ｂ" in chn_char:
-                        print(f"Skip this: {utt_id} {chn_char} {pinyin}")
-                        continue
+                    # if "IY1" in pinyin or "Ｂ" in chn_char:
+                    #     print(f"Skip this: {utt_id} {chn_char} {pinyin}")
+                    #     continue
                     phonemes = self.get_phoneme_from_char_and_pinyin(chn_char, pinyin)
                     wav_path = os.path.join(self.data_dir, "Wave", "%s.wav" % utt_id)
                     items.append(
@@ -576,6 +611,7 @@ class BakerProcessor(BaseProcessor):
     def get_phoneme_from_char_and_pinyin(self, chn_char, pinyin):
         # we do not need #4, use sil to replace it
         chn_char = chn_char.replace("#4", "")
+        chn_char = unicodedata.normalize('NFKC', chn_char)  # 转为英文标点符号
         char_len = len(chn_char)
         i, j = 0, 0
         result = ["sil"]
@@ -588,7 +624,7 @@ class BakerProcessor(BaseProcessor):
                     tone = pinyin[j][-1]
                     a = pinyin[j][:-2]
                     a1, a2 = self.pinyin_dict[a]
-                    result += [a1, a2 + tone, "er5"]
+                    result += [a1, a2, "@" + tone, "er5"]
                     if i + 2 < char_len and chn_char[i + 2] != "#":
                         result.append("#0")
 
@@ -598,7 +634,7 @@ class BakerProcessor(BaseProcessor):
                     tone = pinyin[j][-1]
                     a = pinyin[j][:-1]
                     a1, a2 = self.pinyin_dict[a]
-                    result += [a1, a2 + tone]
+                    result += [a1, a2, "@" + tone]
 
                     if i + 1 < char_len and chn_char[i + 1] != "#":
                         result.append("#0")
@@ -606,15 +642,26 @@ class BakerProcessor(BaseProcessor):
                     i += 1
                     j += 1
             elif cur_char == "#":
-                result.append(chn_char[i : i + 2])
+                result.append(chn_char[i: i + 2])
                 i += 2
+            elif cur_char.encode('UTF-8').isalpha():  # 英文字母转换为英文arpabet音素
+                # if cur_char.upper() == 'A':
+                #     result += ["@EY1"]
+                # else:
+                result += ["@" + s for s in g2p(cur_char)]
+                if i + 1 < char_len and chn_char[i + 1] != "#":
+                    result.append("#0")
+                i += 1
+                j += 1
             else:
-                # ignore the unknown char and punctuation
-                # result.append(chn_char[i])
+                # not ignore the unknown char and punctuation
+                if cur_char in BAKER_SYMBOLS:
+                    result.append(cur_char)
                 i += 1
         if result[-1] == "#0":
             result = result[:-1]
         result.append("sil")
+        print(result)
         assert j == len(pinyin)
         return result
 
@@ -632,6 +679,7 @@ class BakerProcessor(BaseProcessor):
         try:
             text_ids = np.asarray(self.text_to_sequence(text), np.int32)
         except Exception as e:
+            print(str(e))
             print(e, utt_id, text)
             return None
 
@@ -654,7 +702,10 @@ class BakerProcessor(BaseProcessor):
 
     def text_to_sequence(self, text, inference=False):
         if inference:
-            pinyin = self.pinyin_parser(text, style=Style.TONE3, errors="ignore")
+            pinyin = self.pinyin_parser(text, style=Style.TONE3,
+                                        # errors="ignore"
+                                        errors=lambda char: [i for i in char.upper() if i.isalpha()]
+                                        )
             new_pinyin = []
             for x in pinyin:
                 x = "".join(x)
@@ -665,10 +716,14 @@ class BakerProcessor(BaseProcessor):
             print(f"phoneme seq: {text}")
 
         sequence = []
-        for symbol in text.split():
-            idx = self.symbol_to_id[symbol]
-            sequence.append(idx)
-        
+        tmp = ""
+        try:
+            for symbol in text.split():
+                tmp = symbol
+                idx = self.symbol_to_id[symbol]
+                sequence.append(idx)
+        except Exception as e:
+            print("text_to_sequence error", tmp)
         # add eos tokens
         sequence += [self.eos_id]
         return sequence

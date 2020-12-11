@@ -26,7 +26,7 @@ requirements = {
         "tensorflow-addons>=0.10.0",
         "setuptools>=38.5.1",
         "librosa>=0.7.0",
-        "soundfile>=0.10.2",
+        "soundfile>=0.10.3",
         "matplotlib>=3.1.0",
         "PyYAML>=3.12",
         "tqdm>=4.26.1",
@@ -35,7 +35,7 @@ requirements = {
         "inflect>=4.1.0",
         "scikit-learn>=0.22.0",
         "pyworld>=0.2.10",
-        "numba<=0.48",  # Fix No module named "numba.decorators"
+        "numba==0.48",  # Fix No module named "numba.decorators"
         "jamo>=0.4.1",
         "pypinyin",
         "g2pM",

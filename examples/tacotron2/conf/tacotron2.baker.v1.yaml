@@ -18,7 +18,7 @@ model_type: "tacotron2"
 tacotron2_params:
     dataset: baker
     embedding_hidden_size: 512
-    initializer_range: 0.5
+    initializer_range: 0.02
     embedding_dropout_prob: 0.1
     n_speakers: 1
     n_conv_encoder: 5
@@ -47,7 +47,7 @@ tacotron2_params:
 ###########################################################
 #                  DATA LOADER SETTING                    #
 ###########################################################
-batch_size: 32             # Batch size for each GPU with assuming that gradient_accumulation_steps == 1.
+batch_size: 16             # Batch size for each GPU with assuming that gradient_accumulation_steps == 1.
 remove_short_samples: true # Whether to remove samples the length of which are less than batch_max_steps.
 allow_cache: true          # Whether to allow cache in dataset. If true, it requires cpu memory.
 mel_length_threshold: 32   # remove all targets has mel_length <= 32 
@@ -59,7 +59,7 @@ use_fixed_shapes: true     # use_fixed_shapes for training (2x speed-up)
 #             OPTIMIZER & SCHEDULER SETTING               #
 ###########################################################
 optimizer_params:
-    initial_learning_rate: 0.001
+    initial_learning_rate: 0.0001
     end_learning_rate: 0.00001
     decay_steps: 150000          # < train_max_steps is recommend.
     warmup_proportion: 0.02
@@ -73,9 +73,9 @@ var_train_expr: null  # trainable variable expr (eg. 'embeddings|decoder_cell' )
 #                    INTERVAL SETTING                     #
 ###########################################################
 train_max_steps: 200000                 # Number of training steps.
-save_interval_steps: 5000               # Interval steps to save checkpoint.
+save_interval_steps: 2000               # Interval steps to save checkpoint.
 eval_interval_steps: 500                # Interval steps to evaluate the network.
-log_interval_steps: 100                 # Interval steps to record the training log.
+log_interval_steps: 200                 # Interval steps to record the training log.
 start_schedule_teacher_forcing: 200001  # don't need to apply schedule teacher forcing.
 start_ratio_value: 0.5                  # start ratio of scheduled teacher forcing.
 schedule_decay_steps: 50000             # decay step scheduled teacher forcing.

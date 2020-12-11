@@ -39,7 +39,6 @@ from tensorflow_tts.processor import ThorstenProcessor
 from tensorflow_tts.processor.ljspeech import LJSPEECH_SYMBOLS
 from tensorflow_tts.processor.baker import BAKER_SYMBOLS
 from tensorflow_tts.processor.kss import KSS_SYMBOLS
-from tensorflow_tts.processor.libritts import LIBRITTS_SYMBOLS
 from tensorflow_tts.processor.thorsten import THORSTEN_SYMBOLS
 
 from tensorflow_tts.utils import remove_outlier
@@ -357,7 +356,7 @@ def preprocess():
     dataset_symbol = {
         "ljspeech": LJSPEECH_SYMBOLS,
         "kss": KSS_SYMBOLS,
-        "libritts": LIBRITTS_SYMBOLS,
+        "libritts": BAKER_SYMBOLS,
         "baker": BAKER_SYMBOLS,
         "thorsten": THORSTEN_SYMBOLS,
     }
