@@ -29,78 +29,20 @@ from pypinyin.core import Pinyin
 from tensorflow_tts.processor import BaseProcessor
 from g2p_en import g2p as grapheme_to_phonem
 import unicodedata
+from tensorflow_tts.processor.ch_pinyin import PINYIN_DICT, mark, zh_pattern
 
 _pad = ["pad"]
 _eos = ["eos"]
 _pause = ["sil", "#0", "#1", "#2", "#3"]
 # 声母
-_initials = [
-    "^",
-    "b",
-    "c",
-    "ch",
-    "d",
-    "f",
-    "g",
-    "h",
-    "j",
-    "k",
-    "l",
-    "m",
-    "n",
-    "p",
-    "q",
-    "r",
-    "s",
-    "sh",
-    "t",
-    "x",
-    "z",
-    "zh",
-]
+_initials = ["^", "b", "c", "ch", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "sh", "t", "x", "z",
+             "zh"]
 
 _tones = ["1", "2", "3", "4", "5"]
 # 韵母
-_finals = [
-    "a",
-    "ai",
-    "an",
-    "ang",
-    "ao",
-    "e",
-    "ei",
-    "en",
-    "eng",
-    "er",
-    "i",
-    "ia",
-    "ian",
-    "iang",
-    "iao",
-    "ie",
-    "ii",
-    "iii",
-    "in",
-    "ing",
-    "iong",
-    "iou",
-    "o",
-    "ong",
-    "ou",
-    "u",
-    "ua",
-    "uai",
-    "uan",
-    "uang",
-    "uei",
-    "uen",
-    "ueng",
-    "uo",
-    "v",
-    "van",
-    "ve",
-    "vn",
-]
+_finals = ["a", "ai", "an", "ang", "ao", "e", "ei", "en", "eng", "er", "i", "ia", "ian", "iang", "iao", "ie", "ii",
+           "iii", "in", "ing", "iong", "iou", "o", "ong", "ou", "u", "ua", "uai", "uan", "uang", "uei", "uen", "ueng",
+           "uo", "v", "van", "ve", "vn"]
 
 g2p = grapheme_to_phonem.G2p()
 valid_symbols = g2p.phonemes
@@ -109,432 +51,8 @@ _arpabet = ["@" + s for s in valid_symbols] + list(_punctuation)
 
 BAKER_SYMBOLS = _pad + _pause + _initials + _finals + ["@" + i for i in _tones] + _arpabet + _eos
 
-PINYIN_DICT = {
-    "a": ("^", "a"),
-    "ai": ("^", "ai"),
-    "an": ("^", "an"),
-    "ang": ("^", "ang"),
-    "ao": ("^", "ao"),
-    "ba": ("b", "a"),
-    "bai": ("b", "ai"),
-    "ban": ("b", "an"),
-    "bang": ("b", "ang"),
-    "bao": ("b", "ao"),
-    "be": ("b", "e"),
-    "bei": ("b", "ei"),
-    "ben": ("b", "en"),
-    "beng": ("b", "eng"),
-    "bi": ("b", "i"),
-    "bian": ("b", "ian"),
-    "biao": ("b", "iao"),
-    "bie": ("b", "ie"),
-    "bin": ("b", "in"),
-    "bing": ("b", "ing"),
-    "bo": ("b", "o"),
-    "bu": ("b", "u"),
-    "ca": ("c", "a"),
-    "cai": ("c", "ai"),
-    "can": ("c", "an"),
-    "cang": ("c", "ang"),
-    "cao": ("c", "ao"),
-    "ce": ("c", "e"),
-    "cen": ("c", "en"),
-    "ceng": ("c", "eng"),
-    "cha": ("ch", "a"),
-    "chai": ("ch", "ai"),
-    "chan": ("ch", "an"),
-    "chang": ("ch", "ang"),
-    "chao": ("ch", "ao"),
-    "che": ("ch", "e"),
-    "chen": ("ch", "en"),
-    "cheng": ("ch", "eng"),
-    "chi": ("ch", "iii"),
-    "chong": ("ch", "ong"),
-    "chou": ("ch", "ou"),
-    "chu": ("ch", "u"),
-    "chua": ("ch", "ua"),
-    "chuai": ("ch", "uai"),
-    "chuan": ("ch", "uan"),
-    "chuang": ("ch", "uang"),
-    "chui": ("ch", "uei"),
-    "chun": ("ch", "uen"),
-    "chuo": ("ch", "uo"),
-    "ci": ("c", "ii"),
-    "cong": ("c", "ong"),
-    "cou": ("c", "ou"),
-    "cu": ("c", "u"),
-    "cuan": ("c", "uan"),
-    "cui": ("c", "uei"),
-    "cun": ("c", "uen"),
-    "cuo": ("c", "uo"),
-    "da": ("d", "a"),
-    "dai": ("d", "ai"),
-    "dan": ("d", "an"),
-    "dang": ("d", "ang"),
-    "dao": ("d", "ao"),
-    "de": ("d", "e"),
-    "dei": ("d", "ei"),
-    "den": ("d", "en"),
-    "deng": ("d", "eng"),
-    "di": ("d", "i"),
-    "dia": ("d", "ia"),
-    "dian": ("d", "ian"),
-    "diao": ("d", "iao"),
-    "die": ("d", "ie"),
-    "ding": ("d", "ing"),
-    "diu": ("d", "iou"),
-    "dong": ("d", "ong"),
-    "dou": ("d", "ou"),
-    "du": ("d", "u"),
-    "duan": ("d", "uan"),
-    "dui": ("d", "uei"),
-    "dun": ("d", "uen"),
-    "duo": ("d", "uo"),
-    "e": ("^", "e"),
-    "ei": ("^", "ei"),
-    "en": ("^", "en"),
-    "ng": ("^", "en"),
-    "eng": ("^", "eng"),
-    "er": ("^", "er"),
-    "fa": ("f", "a"),
-    "fan": ("f", "an"),
-    "fang": ("f", "ang"),
-    "fei": ("f", "ei"),
-    "fen": ("f", "en"),
-    "feng": ("f", "eng"),
-    "fo": ("f", "o"),
-    "fou": ("f", "ou"),
-    "fu": ("f", "u"),
-    "ga": ("g", "a"),
-    "gai": ("g", "ai"),
-    "gan": ("g", "an"),
-    "gang": ("g", "ang"),
-    "gao": ("g", "ao"),
-    "ge": ("g", "e"),
-    "gei": ("g", "ei"),
-    "gen": ("g", "en"),
-    "geng": ("g", "eng"),
-    "gong": ("g", "ong"),
-    "gou": ("g", "ou"),
-    "gu": ("g", "u"),
-    "gua": ("g", "ua"),
-    "guai": ("g", "uai"),
-    "guan": ("g", "uan"),
-    "guang": ("g", "uang"),
-    "gui": ("g", "uei"),
-    "gun": ("g", "uen"),
-    "guo": ("g", "uo"),
-    "ha": ("h", "a"),
-    "hai": ("h", "ai"),
-    "han": ("h", "an"),
-    "hang": ("h", "ang"),
-    "hao": ("h", "ao"),
-    "he": ("h", "e"),
-    "hei": ("h", "ei"),
-    "hen": ("h", "en"),
-    "heng": ("h", "eng"),
-    "hong": ("h", "ong"),
-    "hou": ("h", "ou"),
-    "hu": ("h", "u"),
-    "hua": ("h", "ua"),
-    "huai": ("h", "uai"),
-    "huan": ("h", "uan"),
-    "huang": ("h", "uang"),
-    "hui": ("h", "uei"),
-    "hun": ("h", "uen"),
-    "huo": ("h", "uo"),
-    "ji": ("j", "i"),
-    "jia": ("j", "ia"),
-    "jian": ("j", "ian"),
-    "jiang": ("j", "iang"),
-    "jiao": ("j", "iao"),
-    "jie": ("j", "ie"),
-    "jin": ("j", "in"),
-    "jing": ("j", "ing"),
-    "jiong": ("j", "iong"),
-    "jiu": ("j", "iou"),
-    "ju": ("j", "v"),
-    "juan": ("j", "van"),
-    "jue": ("j", "ve"),
-    "jun": ("j", "vn"),
-    "ka": ("k", "a"),
-    "kai": ("k", "ai"),
-    "kan": ("k", "an"),
-    "kang": ("k", "ang"),
-    "kao": ("k", "ao"),
-    "ke": ("k", "e"),
-    "kei": ("k", "ei"),
-    "ken": ("k", "en"),
-    "keng": ("k", "eng"),
-    "kong": ("k", "ong"),
-    "kou": ("k", "ou"),
-    "ku": ("k", "u"),
-    "kua": ("k", "ua"),
-    "kuai": ("k", "uai"),
-    "kuan": ("k", "uan"),
-    "kuang": ("k", "uang"),
-    "kui": ("k", "uei"),
-    "kun": ("k", "uen"),
-    "kuo": ("k", "uo"),
-    "la": ("l", "a"),
-    "lai": ("l", "ai"),
-    "lan": ("l", "an"),
-    "lang": ("l", "ang"),
-    "lao": ("l", "ao"),
-    "le": ("l", "e"),
-    "lei": ("l", "ei"),
-    "leng": ("l", "eng"),
-    "li": ("l", "i"),
-    "lia": ("l", "ia"),
-    "lian": ("l", "ian"),
-    "liang": ("l", "iang"),
-    "liao": ("l", "iao"),
-    "lie": ("l", "ie"),
-    "lin": ("l", "in"),
-    "ling": ("l", "ing"),
-    "liu": ("l", "iou"),
-    "lo": ("l", "o"),
-    "long": ("l", "ong"),
-    "lou": ("l", "ou"),
-    "lu": ("l", "u"),
-    "lv": ("l", "v"),
-    "luan": ("l", "uan"),
-    "lve": ("l", "ve"),
-    "lue": ("l", "ve"),
-    "lun": ("l", "uen"),
-    "luo": ("l", "uo"),
-    "ma": ("m", "a"),
-    "mai": ("m", "ai"),
-    "man": ("m", "an"),
-    "mang": ("m", "ang"),
-    "mao": ("m", "ao"),
-    "me": ("m", "e"),
-    "mei": ("m", "ei"),
-    "men": ("m", "en"),
-    "meng": ("m", "eng"),
-    "mi": ("m", "i"),
-    "mian": ("m", "ian"),
-    "miao": ("m", "iao"),
-    "mie": ("m", "ie"),
-    "min": ("m", "in"),
-    "ming": ("m", "ing"),
-    "miu": ("m", "iou"),
-    "mo": ("m", "o"),
-    "mou": ("m", "ou"),
-    "mu": ("m", "u"),
-    "na": ("n", "a"),
-    "nai": ("n", "ai"),
-    "nan": ("n", "an"),
-    "nang": ("n", "ang"),
-    "nao": ("n", "ao"),
-    "ne": ("n", "e"),
-    "nei": ("n", "ei"),
-    "nen": ("n", "en"),
-    "neng": ("n", "eng"),
-    "ni": ("n", "i"),
-    "nia": ("n", "ia"),
-    "nian": ("n", "ian"),
-    "niang": ("n", "iang"),
-    "niao": ("n", "iao"),
-    "nie": ("n", "ie"),
-    "nin": ("n", "in"),
-    "ning": ("n", "ing"),
-    "niu": ("n", "iou"),
-    "nong": ("n", "ong"),
-    "nou": ("n", "ou"),
-    "nu": ("n", "u"),
-    "nv": ("n", "v"),
-    "nuan": ("n", "uan"),
-    "nve": ("n", "ve"),
-    "nue": ("n", "ve"),
-    "nuo": ("n", "uo"),
-    "o": ("^", "o"),
-    "ou": ("^", "ou"),
-    "pa": ("p", "a"),
-    "pai": ("p", "ai"),
-    "pan": ("p", "an"),
-    "pang": ("p", "ang"),
-    "pao": ("p", "ao"),
-    "pe": ("p", "e"),
-    "pei": ("p", "ei"),
-    "pen": ("p", "en"),
-    "peng": ("p", "eng"),
-    "pi": ("p", "i"),
-    "pian": ("p", "ian"),
-    "piao": ("p", "iao"),
-    "pie": ("p", "ie"),
-    "pin": ("p", "in"),
-    "ping": ("p", "ing"),
-    "po": ("p", "o"),
-    "pou": ("p", "ou"),
-    "pu": ("p", "u"),
-    "qi": ("q", "i"),
-    "qia": ("q", "ia"),
-    "qian": ("q", "ian"),
-    "qiang": ("q", "iang"),
-    "qiao": ("q", "iao"),
-    "qie": ("q", "ie"),
-    "qin": ("q", "in"),
-    "qing": ("q", "ing"),
-    "qiong": ("q", "iong"),
-    "qiu": ("q", "iou"),
-    "qu": ("q", "v"),
-    "quan": ("q", "van"),
-    "que": ("q", "ve"),
-    "qun": ("q", "vn"),
-    "ran": ("r", "an"),
-    "rang": ("r", "ang"),
-    "rao": ("r", "ao"),
-    "re": ("r", "e"),
-    "ren": ("r", "en"),
-    "reng": ("r", "eng"),
-    "ri": ("r", "iii"),
-    "rong": ("r", "ong"),
-    "rou": ("r", "ou"),
-    "ru": ("r", "u"),
-    "rua": ("r", "ua"),
-    "ruan": ("r", "uan"),
-    "rui": ("r", "uei"),
-    "run": ("r", "uen"),
-    "ruo": ("r", "uo"),
-    "sa": ("s", "a"),
-    "sai": ("s", "ai"),
-    "san": ("s", "an"),
-    "sang": ("s", "ang"),
-    "sao": ("s", "ao"),
-    "se": ("s", "e"),
-    "sen": ("s", "en"),
-    "seng": ("s", "eng"),
-    "sha": ("sh", "a"),
-    "shai": ("sh", "ai"),
-    "shan": ("sh", "an"),
-    "shang": ("sh", "ang"),
-    "shao": ("sh", "ao"),
-    "she": ("sh", "e"),
-    "shei": ("sh", "ei"),
-    "shen": ("sh", "en"),
-    "sheng": ("sh", "eng"),
-    "shi": ("sh", "iii"),
-    "shou": ("sh", "ou"),
-    "shu": ("sh", "u"),
-    "shua": ("sh", "ua"),
-    "shuai": ("sh", "uai"),
-    "shuan": ("sh", "uan"),
-    "shuang": ("sh", "uang"),
-    "shui": ("sh", "uei"),
-    "shun": ("sh", "uen"),
-    "shuo": ("sh", "uo"),
-    "si": ("s", "ii"),
-    "song": ("s", "ong"),
-    "sou": ("s", "ou"),
-    "su": ("s", "u"),
-    "suan": ("s", "uan"),
-    "sui": ("s", "uei"),
-    "sun": ("s", "uen"),
-    "suo": ("s", "uo"),
-    "ta": ("t", "a"),
-    "tai": ("t", "ai"),
-    "tan": ("t", "an"),
-    "tang": ("t", "ang"),
-    "tao": ("t", "ao"),
-    "te": ("t", "e"),
-    "tei": ("t", "ei"),
-    "teng": ("t", "eng"),
-    "ti": ("t", "i"),
-    "tian": ("t", "ian"),
-    "tiao": ("t", "iao"),
-    "tie": ("t", "ie"),
-    "ting": ("t", "ing"),
-    "tong": ("t", "ong"),
-    "tou": ("t", "ou"),
-    "tu": ("t", "u"),
-    "tuan": ("t", "uan"),
-    "tui": ("t", "uei"),
-    "tun": ("t", "uen"),
-    "tuo": ("t", "uo"),
-    "wa": ("^", "ua"),
-    "wai": ("^", "uai"),
-    "wan": ("^", "uan"),
-    "wang": ("^", "uang"),
-    "wei": ("^", "uei"),
-    "wen": ("^", "uen"),
-    "weng": ("^", "ueng"),
-    "wo": ("^", "uo"),
-    "wu": ("^", "u"),
-    "xi": ("x", "i"),
-    "xia": ("x", "ia"),
-    "xian": ("x", "ian"),
-    "xiang": ("x", "iang"),
-    "xiao": ("x", "iao"),
-    "xie": ("x", "ie"),
-    "xin": ("x", "in"),
-    "xing": ("x", "ing"),
-    "xiong": ("x", "iong"),
-    "xiu": ("x", "iou"),
-    "xu": ("x", "v"),
-    "xuan": ("x", "van"),
-    "xue": ("x", "ve"),
-    "xun": ("x", "vn"),
-    "ya": ("^", "ia"),
-    "yan": ("^", "ian"),
-    "yang": ("^", "iang"),
-    "yao": ("^", "iao"),
-    "ye": ("^", "ie"),
-    "yi": ("^", "i"),
-    "yin": ("^", "in"),
-    "ying": ("^", "ing"),
-    "yo": ("^", "iou"),
-    "yong": ("^", "iong"),
-    "you": ("^", "iou"),
-    "yu": ("^", "v"),
-    "yuan": ("^", "van"),
-    "yue": ("^", "ve"),
-    "yun": ("^", "vn"),
-    "za": ("z", "a"),
-    "zai": ("z", "ai"),
-    "zan": ("z", "an"),
-    "zang": ("z", "ang"),
-    "zao": ("z", "ao"),
-    "ze": ("z", "e"),
-    "zei": ("z", "ei"),
-    "zen": ("z", "en"),
-    "zeng": ("z", "eng"),
-    "zha": ("zh", "a"),
-    "zhai": ("zh", "ai"),
-    "zhan": ("zh", "an"),
-    "zhang": ("zh", "ang"),
-    "zhao": ("zh", "ao"),
-    "zhe": ("zh", "e"),
-    "zhei": ("zh", "ei"),
-    "zhen": ("zh", "en"),
-    "zheng": ("zh", "eng"),
-    "zhi": ("zh", "iii"),
-    "zhong": ("zh", "ong"),
-    "zhou": ("zh", "ou"),
-    "zhu": ("zh", "u"),
-    "zhua": ("zh", "ua"),
-    "zhuai": ("zh", "uai"),
-    "zhuan": ("zh", "uan"),
-    "zhuang": ("zh", "uang"),
-    "zhui": ("zh", "uei"),
-    "zhun": ("zh", "uen"),
-    "zhuo": ("zh", "uo"),
-    "zi": ("z", "ii"),
-    "zong": ("z", "ong"),
-    "zou": ("z", "ou"),
-    "zu": ("z", "u"),
-    "zuan": ("z", "uan"),
-    "zui": ("z", "uei"),
-    "zun": ("z", "uen"),
-    "zuo": ("z", "uo"),
-}
-
-zh_pattern = re.compile("[\u4e00-\u9fa5]")
-mark = {"en": 1, "zh": 2}
-
 
 def is_zh(word):
-    global zh_pattern
     match = zh_pattern.search(word)
     return match is not None
 
@@ -579,6 +97,13 @@ class BakerProcessor(BaseProcessor):
     cleaner_names: str = None
     target_rate: int = 24000
     speaker_name: str = "baker"
+    train_f_name: str = "train.txt"
+    positions = {
+        "file": 0,
+        "text": 1,
+        "speaker_name": 2,
+    }  # positions of file,text,speaker_name after split line
+    f_extension: str = ".wav"
 
     def __post_init__(self):
         super().__post_init__()
@@ -606,6 +131,21 @@ class BakerProcessor(BaseProcessor):
                     items.append(
                         [" ".join(phonemes), wav_path, utt_id, self.speaker_name]
                     )
+
+            with open(
+                    os.path.join(self.data_dir, 'libritts', self.train_f_name), mode="r", encoding="utf-8"
+            ) as f:
+                for line in f:
+                    parts = line.strip().split(self.delimiter)
+                    wav_path = os.path.join(self.data_dir, 'libritts', parts[self.positions["file"]])
+                    wav_path = (
+                        wav_path + self.f_extension
+                        if wav_path[-len(self.f_extension):] != self.f_extension
+                        else wav_path
+                    )
+                    text = parts[self.positions["text"]]
+                    speaker_name = parts[self.positions["speaker_name"]]
+                    items.append([text, wav_path, wav_path.split("/")[-1].split(".")[0], speaker_name])
             self.items = items
 
     def get_phoneme_from_char_and_pinyin(self, chn_char, pinyin):
@@ -624,7 +164,7 @@ class BakerProcessor(BaseProcessor):
                     tone = pinyin[j][-1]
                     a = pinyin[j][:-2]
                     a1, a2 = self.pinyin_dict[a]
-                    result += [a1, a2, "@" + tone, "er5"]
+                    result += [a1, a2, "@" + tone, "er", "@5"]
                     if i + 2 < char_len and chn_char[i + 2] != "#":
                         result.append("#0")
 
@@ -669,15 +209,15 @@ class BakerProcessor(BaseProcessor):
         text, wav_file, utt_id, speaker_name = item
 
         # normalize audio signal to be [-1, 1], soundfile already norm.
-        audio, rate = sf.read(wav_file)
-        audio = audio.astype(np.float32)
+        audio, rate = sf.read(wav_file, dtype="float32")
+        # audio = audio.astype(np.float32)
         if rate != self.target_rate:
             assert rate > self.target_rate
             audio = librosa.resample(audio, rate, self.target_rate)
 
         # convert text to ids
         try:
-            text_ids = np.asarray(self.text_to_sequence(text), np.int32)
+            text_ids = np.asarray(self.text_to_sequence(text, speaker_name), np.int32)
         except Exception as e:
             print(str(e))
             print(e, utt_id, text)
@@ -688,7 +228,7 @@ class BakerProcessor(BaseProcessor):
             "raw_text": text,
             "text_ids": text_ids,
             "audio": audio,
-            "utt_id": str(int(utt_id)),
+            "utt_id": utt_id,
             "speaker_name": speaker_name,
             "rate": self.target_rate,
         }
@@ -700,30 +240,58 @@ class BakerProcessor(BaseProcessor):
         pinyin = my_pinyin.pinyin
         return pinyin
 
-    def text_to_sequence(self, text, inference=False):
-        if inference:
-            pinyin = self.pinyin_parser(text, style=Style.TONE3,
-                                        # errors="ignore"
-                                        errors=lambda char: [i for i in char.upper() if i.isalpha()]
-                                        )
-            new_pinyin = []
-            for x in pinyin:
-                x = "".join(x)
-                if "#" not in x:
-                    new_pinyin.append(x)
-            phonemes = self.get_phoneme_from_char_and_pinyin(text, new_pinyin)
-            text = " ".join(phonemes)
-            print(f"phoneme seq: {text}")
-
+    def text_to_sequence(self, text, speaker_name='baker', inference=False):
         sequence = []
         tmp = ""
-        try:
-            for symbol in text.split():
-                tmp = symbol
-                idx = self.symbol_to_id[symbol]
-                sequence.append(idx)
-        except Exception as e:
-            print("text_to_sequence error", tmp)
-        # add eos tokens
-        sequence += [self.eos_id]
+        if "baker" == speaker_name:
+            if inference:
+                pinyin = self.pinyin_parser(text, style=Style.TONE3,
+                                            # errors="ignore"
+                                            errors=lambda char: [i for i in char.upper() if i.isalpha()]
+                                            )
+                new_pinyin = []
+                for x in pinyin:
+                    x = "".join(x)
+                    if "#" not in x:
+                        new_pinyin.append(x)
+                phonemes = self.get_phoneme_from_char_and_pinyin(text, new_pinyin)
+                text = " ".join(phonemes)
+                print(f"phoneme seq: {text}")
+            try:
+                for symbol in text.split():
+                    tmp = symbol
+                    idx = self.symbol_to_id[symbol]
+                    sequence.append(idx)
+            except Exception as e:
+                print("text_to_sequence error", tmp)
+            # add eos tokens
+            sequence += [self.eos_id]
+        else:
+            # if not inference:  # in train mode text should be already transformed to phonemes
+            #     return self.symbols_to_ids(self.clean_g2p(text.split(" ")))
+            # else:
+            return self.inference_text_to_seq(text)
         return sequence
+
+    def inference_text_to_seq(self, text: str):
+        return self.symbols_to_ids(self.text_to_ph(text))
+
+    def symbols_to_ids(self, symbols_list: list):
+        return [self.symbol_to_id[s] for s in symbols_list]
+
+    def text_to_ph(self, text: str):
+        return self.clean_g2p(g2p(text))
+
+    def clean_g2p(self, g2p_text: list):
+        data = ["sil"]
+        for i, txt in enumerate(g2p_text):
+            if "@" + txt not in BAKER_SYMBOLS and txt not in BAKER_SYMBOLS:
+                continue
+            if txt in BAKER_SYMBOLS:
+                data.append(txt)
+            else:
+                data.append("@" + txt)
+        if data[-1] in _punctuation or data[-1] == "sil":
+            data = data[:-1]
+        data.append("sil")
+        return data
