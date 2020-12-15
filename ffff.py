@@ -173,4 +173,8 @@ if __name__ == '__main__':
     # result = split_zh_en(str)
     # print(result)
 
-    print(g2p("hello, world-"))
+    # print(g2p("hello, world-"))
+    # CUDA_VISIBLE_DEVICES=0 python examples/multiband_melgan/train_multiband_melgan.py --train-dir ../data/dump_mix/train --dev-dir ../data/dump_mix/valid --outdir ./examples/multiband_melgan/exp/train.multiband_melgan.v1.baker.mix/ --config ./examples/multiband_melgan/conf/multiband_melgan.baker.v1.yaml --use-norm 1 --generator_mixed_precision 1
+    # tensorflow_model_server --rest_api_port=8501 --model_name=test --model_base_path="/home/yxg-server/fine_tuned_model"
+    sss = "1234567890"
+    print(sss[-3:])
