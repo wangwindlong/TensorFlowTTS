@@ -3,7 +3,7 @@ import random
 import shutil
 import soundfile as sf
 
-libri_path = "../data/LibriTTS"  # absolute path to TensorFlowTTS.
+libri_path = "/media/wangyl/data/ttsdata/LibriTTS"  # absolute path to TensorFlowTTS.
 dataset_path = "../data/libritts"  # Change to your paths. This is a output of re-format dataset.
 subset = "train-clean-100"
 with open(os.path.join(libri_path, "SPEAKERS.txt")) as f:
