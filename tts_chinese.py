@@ -22,7 +22,7 @@ starttime = datetime.datetime.now()
 tacotron2_config = AutoConfig.from_pretrained('examples/tacotron2/conf/tacotron2.baker.v1.yaml')
 tacotron2 = TFAutoModel.from_pretrained(
     config=tacotron2_config,
-    pretrained_path="trained/model-74000.h5",
+    pretrained_path="trained/tacotron_ch_aiyue-40k.h5",
     name="tacotron2"
 )
 
@@ -38,11 +38,11 @@ tacotron2 = TFAutoModel.from_pretrained(
 mb_melgan_config = AutoConfig.from_pretrained('examples/multiband_melgan/conf/multiband_melgan.baker.v1.yaml')
 mb_melgan = TFAutoModel.from_pretrained(
     config=mb_melgan_config,
-    pretrained_path="trained/mb.melgan.fixa_250k.h5",
+    pretrained_path="trained/mb.melgan.char-800k.h5",
     name="mb_melgan"
 )
 
-processor = AutoProcessor.from_pretrained(pretrained_path="trained/baker_mapper_mix.json")  # BakerProcessor
+processor = AutoProcessor.from_pretrained(pretrained_path="trained/mapper_ch.json")  # BakerProcessor
 
 
 def do_synthesis(input_text, text2mel_model, vocoder_model, text2mel_name, vocoder_name):
@@ -124,7 +124,8 @@ input_text = "H I M N S X F"
 # ['EH1', 'K', 'S']  K没发音,S结尾有部分杂音,见300063
 # ['EH1', 'S'] 单独的时候 S发音成M? 句子没问题
 # ['EH1', 'F'] F没发音(发音短?)
-input_text = "请小新到 A 零零一窗口办理业务"
+input_text = "请小新到零零一窗口办理业务"
+# input_text = "J"
 # input_text = "中国共产党,共产党,你好吗?我很好"
 # setup window for tacotron2 if you want to try
 tacotron2.setup_window(win_front=2, win_back=2)

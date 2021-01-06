@@ -67,7 +67,7 @@ lambda_adv: 2.5              # Loss balancing coefficient for adversarial loss.
 ###########################################################
 #                  DATA LOADER SETTING                    #
 ###########################################################
-batch_size: 64                 # Batch size for each GPU with assuming that gradient_accumulation_steps == 1.
+batch_size: 32                 # Batch size for each GPU with assuming that gradient_accumulation_steps == 1.
 batch_max_steps: 9600          # Length of each audio in batch for training. Make sure dividable by hop_size.
 batch_max_steps_valid: 48000   # Length of each audio for validation. Make sure dividable by hope_size.
 remove_short_samples: true     # Whether to remove samples the length of which are less than batch_max_steps.
@@ -81,7 +81,7 @@ generator_optimizer_params:
     lr_fn: "PiecewiseConstantDecay"
     lr_params:
         boundaries: [100000, 200000, 300000, 400000, 500000, 600000, 700000]
-        values: [0.001, 0.0005, 0.00025, 0.000125, 0.0000625, 0.00003125, 0.000015625, 0.000001]
+        values: [0.0005, 0.0005, 0.00025, 0.000125, 0.0000625, 0.00003125, 0.000015625, 0.000001]
     amsgrad: false
 
 discriminator_optimizer_params:
@@ -95,9 +95,9 @@ gradient_accumulation_steps: 1
 ###########################################################
 #                    INTERVAL SETTING                     #
 ###########################################################
-discriminator_train_start_steps: 100000  # steps begin training discriminator
+discriminator_train_start_steps: 200000  # steps begin training discriminator
 train_max_steps: 4000000                 # Number of training steps.
-save_interval_steps: 10000               # Interval steps to save checkpoint.
+save_interval_steps: 20000               # Interval steps to save checkpoint.
 eval_interval_steps: 5000                # Interval steps to evaluate the network.
 log_interval_steps: 200                  # Interval steps to record the training log.
 

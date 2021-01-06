@@ -41,14 +41,15 @@ starttime = datetime.datetime.now()
 mb_melgan_config = AutoConfig.from_pretrained('examples/multiband_melgan/conf/multiband_melgan.baker.v1.yaml')
 mb_melgan = TFAutoModel.from_pretrained(
     config=mb_melgan_config,
-    pretrained_path="trained/mb.melgan.fixa_250k.h5",  # "trained/mb.melgan-1M.h5"
+    pretrained_path="trained/mb.melgan.char-800k.h5",  # "trained/mb.melgan-1M.h5"
     # is_build=False,  # don't build model if you want to save it to pb. (TF related bug)
     name="mb_melgan"
 )
 
 # LJSpeechProcessor
 # processor = AutoProcessor.from_pretrained("./tensorflow_tts/processor/pretrained/ljspeech_mapper.json")
-processor = AutoProcessor.from_pretrained("trained/baker_mapper_mix.json")
+# processor = AutoProcessor.from_pretrained("trained/baker_mapper_mix.json")
+processor = AutoProcessor.from_pretrained("trained/baker_mapper_char.json")
 
 
 # save tacotron2 to pb
@@ -91,15 +92,15 @@ def save_melgan_pb():
     fake_mels = tf.random.uniform(shape=[4, 256, 80], dtype=tf.float32)
     audios = mb_melgan.inference(fake_mels)
     mb_melgan.load_weights(
-        "examples/multiband_melgan/exp/train.multiband_melgan.v1.baker.fixa/checkpoints/generator-250000.h5")
-    tf.saved_model.save(mb_melgan, "./saved_mb_melgan_fixa", signatures=mb_melgan.inference)
+        "./examples/multiband_melgan/exp/baker.mix.char/checkpoints/generator-820000.h5")
+    tf.saved_model.save(mb_melgan, "./saved_mb_melgan_mix_char", signatures=mb_melgan.inference)
 
 
 # load melgan and Inference
 def test_melgan():
-    mb_melgan = tf.saved_model.load("./saved_mb_melgan_fixa")
+    mb_melgan = tf.saved_model.load("./saved_mb_melgan_mix_char")
     # mels = np.load("../dump_lj/valid/norm-feats/LJ001-0009-norm-feats.npy")
-    mels = np.load("../dump_baker_mix/valid/norm-feats/300070-norm-feats.npy")
+    mels = np.load("../data/dump_char/train/norm-feats/000001-norm-feats.npy")
     # print(mels)
     print(type(mels))
     print(mels.shape)
@@ -107,7 +108,7 @@ def test_melgan():
     print(type(audios))
     print(audios.shape)
     audios = audios[0, :-1024, 0]
-    write('test_fixa.wav', 24000, audios.numpy())
+    write('test_mix2.wav', 24000, audios.numpy())
 
 
 def test_tacotron2_melgan(mels):
@@ -120,7 +121,7 @@ def test_tacotron2_melgan(mels):
 
 
 # save_tacotron2_pb()
-# save_melgan_pb()
+save_melgan_pb()
 test_melgan()
 # input_text = "{AH0}{B IY1}{S IY1}{D IY1}{IY1}"
 # input_text = "Unless you work on a ship, it's unlikely that you use the word boatswain in everyday conversation, " \

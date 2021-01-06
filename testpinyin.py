@@ -564,20 +564,32 @@ def get_phoneme_from_char_and_pinyin(chn_char, pinyin):
             result.append(chn_char[i: i + 2])
             i += 2
         elif cur_char.encode('UTF-8').isalpha():  # 英文字母转换为英文arpabet音素
-            result += ["@" + s for s in g2p(cur_char)]
-            if i + 1 < char_len and chn_char[i + 1] != "#":
+            start = i
+            if cur_char.islower():  # 小写字母当作单词处理
+                while i + 1 < char_len and chn_char[i + 1].isalpha() and chn_char[i + 1].islower():
+                    i += 1
+                    print(i)
+                i += 1
+                print(chn_char[start: i])
+                result += ["@" + s for s in g2p(chn_char[start: i])]
+            else:
+                if cur_char == 'A':
+                    result += ["@EY1"]
+                else:
+                    result += ["@" + s for s in g2p(cur_char)]
+                i += 1
+                j += 1
+            if i < char_len and chn_char[i] != "#":
                 result.append("#0")
-            i += 1
-            j += 1
         else:
-            # ignore the unknown char and punctuation
-            # result.append(chn_char[i])
-            if cur_char in g2p.phonemes:
-                result.append(cur_char)
+            # not ignore the unknown char and punctuation
+            # if cur_char in BAKER_SYMBOLS:
+            #     result.append(cur_char)
             i += 1
     if result[-1] == "#0":
         result = result[:-1]
     result.append("sil")
+    assert j == len(pinyin)
     print(result)
     print(pinyin)
     print(j)
@@ -585,10 +597,13 @@ def get_phoneme_from_char_and_pinyin(chn_char, pinyin):
     assert j == len(pinyin)
     return result
 
+
 if __name__ == '__main__':
-    han = "F#1H#1P#2不是#1一个词#3，我说#1F#1H#1P#1这个词#3，已经#1说完了#3F#1H#1P#4"
-    pinyin = "F1 H1 P1 bu2 shi4 yi2 ge4 ci2 wo3 shuo1 F1 H1 P1 zhe4 ge4 ci2 yi3 jing1 shuo1 wan2 le5 F1 H1 P1".strip().split()
+    han = "柯特妮#2expansive#1身穿#2probable#1豹纹#1shy#1大衣#4。"
+    pinyin = "ke1 te4 ni1 shen1 chuan1 bao4 wen2 da4 yi1".strip().split()
     print(get_phoneme_from_char_and_pinyin(han, pinyin))
     print(g2p("A"))
+    print("aaswdfsdf"[1:6])
+    # print("#2".islower())
     # print("Ｐ".encode('UTF-8'))  # b'\xef\xbc\xb0'
     # print("P".encode('UTF-8'))  # b'P'

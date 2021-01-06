@@ -36,6 +36,7 @@ print(g2p('fetch'))
 print(g2p('cake'))
 print(g2p('age'))
 print(g2p('banana'))
+print(g2p('ABCDEFG'))
 
 texts = ""
 with open("/home/wangyl/test.txt") as text_file:
@@ -178,3 +179,4 @@ if __name__ == '__main__':
     # tensorflow_model_server --rest_api_port=8501 --model_name=test --model_base_path="/home/yxg-server/fine_tuned_model"
     sss = "1234567890"
     print(sss[-3:])
+    print(g2p('A B C D E F G'))

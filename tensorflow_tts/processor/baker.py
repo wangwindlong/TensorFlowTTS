@@ -52,6 +52,9 @@ _arpabet = ["@" + s for s in valid_symbols] + list(_punctuation)
 BAKER_SYMBOLS = _pad + _pause + _initials + _finals + ["@" + i for i in _tones] + _arpabet + _eos
 
 
+# BAKER_SYMBOLS = _pad + _pause + _initials + [i + j for i in _finals for j in _tones] + _arpabet + _eos
+
+
 def is_zh(word):
     match = zh_pattern.search(word)
     return match is not None
@@ -119,7 +122,8 @@ class BakerProcessor(BaseProcessor):
             ) as ttf:
                 lines = ttf.readlines()
                 for idx in range(0, len(lines), 2):
-                    utt_id, chn_char = lines[idx].strip().split()
+                    print(lines[idx])
+                    utt_id, chn_char = lines[idx].strip().split(" ", 1)
                     pinyin = lines[idx + 1].strip().split()
                     # if "IY1" in pinyin or "Ｂ" in chn_char:
                     #     print(f"Skip this: {utt_id} {chn_char} {pinyin}")
@@ -131,32 +135,30 @@ class BakerProcessor(BaseProcessor):
                     )
 
             # with open(
-            #         os.path.join(self.data_dir, 'ProsodyLabeling', "ljspeech.txt"), mode="r", encoding="utf-8"
-            # ) as f:
+            #         os.path.join(self.data_dir, 'ProsodyLabeling', "ljspeech.txt"), mode="r", encoding="utf-8") as f:
             #     lines = f.readlines()
             #     for idx in range(0, len(lines), 2):
-            #         utt_id, chn_char = lines[idx].strip().split("	", 1)
+            #         utt_id, chn_char = lines[idx].strip().split(" ", 1)
             #         phonemes = lines[idx + 1].strip().split()
-            #         phonemes.insert(0, "sil")
-            #         phonemes.append("sil")
             #         wav_path = os.path.join(self.data_dir, "Wave", "%s.wav" % utt_id)
             #         items.append(
-            #             [" ".join(phonemes), wav_path, utt_id, self.speaker_name]
+            #             [" ".join(phonemes), wav_path, utt_id, 'ljspeech']
             #         )
-            with open(
-                    os.path.join(self.data_dir, 'libritts', self.train_f_name), mode="r", encoding="utf-8"
-            ) as f:
-                for line in f:
-                    parts = line.strip().split(self.delimiter)
-                    wav_path = os.path.join(self.data_dir, 'libritts', parts[self.positions["file"]])
-                    wav_path = (
-                        wav_path + self.f_extension
-                        if wav_path[-len(self.f_extension):] != self.f_extension
-                        else wav_path
-                    )
-                    text = parts[self.positions["text"]]
-                    speaker_name = parts[self.positions["speaker_name"]]
-                    items.append([text, wav_path, wav_path.split("/")[-1].split(".")[0], speaker_name])
+
+            # with open(
+            #         os.path.join(self.data_dir, 'libritts', self.train_f_name), mode="r", encoding="utf-8"
+            # ) as f:
+            #     for line in f:
+            #         parts = line.strip().split(self.delimiter)
+            #         wav_path = os.path.join(self.data_dir, 'libritts', parts[self.positions["file"]])
+            #         wav_path = (
+            #             wav_path + self.f_extension
+            #             if wav_path[-len(self.f_extension):] != self.f_extension
+            #             else wav_path
+            #         )
+            #         text = parts[self.positions["text"]]
+            #         speaker_name = parts[self.positions["speaker_name"]]
+            #         items.append([text, wav_path, wav_path.split("/")[-1].split(".")[0], speaker_name])
             self.items = items
 
     def get_phoneme_from_libritts(self, text):
@@ -170,7 +172,7 @@ class BakerProcessor(BaseProcessor):
         chn_char = chn_char.replace("#4", "")
         chn_char = unicodedata.normalize('NFKC', chn_char)  # 转为英文标点符号
         char_len = len(chn_char)
-        print(chn_char)
+        # print(chn_char)
         i, j = 0, 0
         result = ["sil"]
         while i < char_len:
@@ -182,7 +184,8 @@ class BakerProcessor(BaseProcessor):
                     tone = pinyin[j][-1]
                     a = pinyin[j][:-2]
                     a1, a2 = self.pinyin_dict[a]
-                    result += [a1, a2, "@" + tone, "er", "@5"]
+                    # result += [a1, a2+tone, "er5"]
+                    result += [a1, a2, '@' + tone, "er", '@5']
                     if i + 2 < char_len and chn_char[i + 2] != "#":
                         result.append("#0")
 
@@ -192,7 +195,8 @@ class BakerProcessor(BaseProcessor):
                     tone = pinyin[j][-1]
                     a = pinyin[j][:-1]
                     a1, a2 = self.pinyin_dict[a]
-                    result += [a1, a2, "@" + tone]
+                    # result += [a1, a2 + tone]
+                    result += [a1, a2, '@' + tone]
 
                     if i + 1 < char_len and chn_char[i + 1] != "#":
                         result.append("#0")
@@ -203,14 +207,23 @@ class BakerProcessor(BaseProcessor):
                 result.append(chn_char[i: i + 2])
                 i += 2
             elif cur_char.encode('UTF-8').isalpha():  # 英文字母转换为英文arpabet音素
-                if cur_char.upper() == 'A':
-                    result += ["@EY1"]
+                start = i
+                if cur_char.islower():  # 小写字母当作单词处理
+                    while i + 1 < char_len and chn_char[i + 1].isalpha() and chn_char[i + 1].islower():
+                        i += 1
+                        # print(i)
+                    i += 1
+                    # print(chn_char[start: i])
+                    result += ["@" + s for s in g2p(chn_char[start: i])]
                 else:
-                    result += ["@" + s for s in g2p(cur_char)]
-                if i + 1 < char_len and chn_char[i + 1] != "#":
+                    if cur_char == 'A':
+                        result += ["@EY1"]
+                    else:
+                        result += ["@" + s for s in g2p(cur_char)]
+                    i += 1
+                    j += 1
+                if i < char_len and chn_char[i] != "#":
                     result.append("#0")
-                i += 1
-                j += 1
             else:
                 # not ignore the unknown char and punctuation
                 # if cur_char in BAKER_SYMBOLS:
@@ -281,13 +294,13 @@ class BakerProcessor(BaseProcessor):
                     sequence.append(idx)
             except Exception as e:
                 print("text_to_sequence error", tmp)
-            # add eos tokens
-            sequence += [self.eos_id]
         else:
-            # if not inference:  # in train mode text should be already transformed to phonemes
-            #     return self.symbols_to_ids(self.clean_g2p(text.split(" ")))
-            # else:
-            return self.inference_text_to_seq(text)
+            if not inference:  # in train mode text should be already transformed to phonemes
+                sequence = self.symbols_to_ids(self.clean_g2p(text.strip().split(" ")))
+            else:
+                sequence = self.inference_text_to_seq(text)
+        # add eos tokens
+        sequence += [self.eos_id]
         return sequence
 
     def inference_text_to_seq(self, text: str):
@@ -303,8 +316,9 @@ class BakerProcessor(BaseProcessor):
         data = ["sil"]
         for i, txt in enumerate(g2p_text):
             if "@" + txt not in BAKER_SYMBOLS and txt not in BAKER_SYMBOLS:
+                print("clean_g2p not in BAKER_SYMBOLS: ", txt)
                 continue
-            if txt in _punctuation:
+            if txt in BAKER_SYMBOLS:
                 data.append(txt)
             else:
                 data.append("@" + txt)
