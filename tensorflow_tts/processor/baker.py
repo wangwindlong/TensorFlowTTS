@@ -167,12 +167,12 @@ class BakerProcessor(BaseProcessor):
         result.append("sil")
         return result
 
-    def get_phoneme_from_char_and_pinyin(self, chn_char, pinyin):
+    def get_phoneme_from_char_and_pinyin(self, chn_char, pinyin, inference=False):
         # we do not need #4, use sil to replace it
         chn_char = chn_char.replace("#4", "")
         chn_char = unicodedata.normalize('NFKC', chn_char)  # 转为英文标点符号
         char_len = len(chn_char)
-        # print(chn_char)
+        print(chn_char)
         i, j = 0, 0
         result = ["sil"]
         while i < char_len:
@@ -213,10 +213,13 @@ class BakerProcessor(BaseProcessor):
                         i += 1
                         # print(i)
                     i += 1
-                    # print(chn_char[start: i])
+                    if inference:
+                        j += 1
+                    print("alpha", chn_char[start: i])
                     result += ["@" + s for s in g2p(chn_char[start: i])]
                 else:
-                    if cur_char == 'A':
+                    if cur_char == 'A' and i != 0 and i + 1 < char_len and not chn_char[
+                        i + 1].islower() and i + 2 < char_len and not chn_char[i + 2].islower():
                         result += ["@EY1"]
                     else:
                         result += ["@" + s for s in g2p(cur_char)]
@@ -270,6 +273,26 @@ class BakerProcessor(BaseProcessor):
         pinyin = my_pinyin.pinyin
         return pinyin
 
+    def alpha_handler(self, words):
+        print("alpha_handler words=", words)
+        words = unicodedata.normalize('NFKC', words)
+        words_len = len(words)
+        result = []
+        i = 0
+        while i < words_len:
+            cur_char = words[i]
+            if cur_char.encode('UTF-8').isalpha():
+                start = i
+                if cur_char.islower():
+                    while i + 1 < words_len and words[i + 1].isalpha() and words[i + 1].islower():
+                        i += 1
+                    result += [words[start: i + 1]]
+                else:
+                    result += [cur_char]
+            i += 1
+        print("alpha_handler result=", result)
+        return result
+
     def text_to_sequence(self, text, speaker_name='baker', inference=False):
         sequence = []
         tmp = ""
@@ -277,14 +300,16 @@ class BakerProcessor(BaseProcessor):
             if inference:
                 pinyin = self.pinyin_parser(text, style=Style.TONE3,
                                             # errors="ignore"
-                                            errors=lambda char: [i for i in char.upper() if i.isalpha()]
+                                            errors=self.alpha_handler
                                             )
                 new_pinyin = []
                 for x in pinyin:
                     x = "".join(x)
                     if "#" not in x:
                         new_pinyin.append(x)
-                phonemes = self.get_phoneme_from_char_and_pinyin(text, new_pinyin)
+                print("text_to_sequence pinyin=", pinyin)
+                print("text_to_sequence new_pinyin=", new_pinyin)
+                phonemes = self.get_phoneme_from_char_and_pinyin(text, new_pinyin, inference)
                 text = " ".join(phonemes)
                 print(f"phoneme seq: {text}")
             try:

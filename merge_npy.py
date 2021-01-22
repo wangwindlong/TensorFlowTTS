@@ -1,9 +1,9 @@
 import numpy as np
 
-a = np.load('../data/dump_mix/train/ids/LJ002-0045-ids.npy')
+a = np.load('../data/dump_mix_word/train/ids/000001-ids.npy')
 print(a)
 
-a = np.load('../data/dump_mix/train/ids/000088-ids.npy')
+a = np.load('../data/dump_mix_word/train/ids/000088-ids.npy')
 print(a)
 # b = np.load('b.npy')
 # c = []
